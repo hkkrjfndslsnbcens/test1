@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="ka">
+    <!-- Set language to Georgian -->
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+        />
+        <title>ჩატი ნანასთან</title>
+        <!-- Georgian Title -->
+        <style>
+            /* --- CSS REMAINS THE SAME --- */
+            :root {
+                --bg-color: #171717;
+                --text-color: #ffffff;
+                --text-secondary-color: #aaaaaa;
+                --link-color: #8cb4ff;
+                --border-color: #444444;
+                --input-bg: #2a2a2a;
+                --user-msg-bg: #404040;
+                --ai-msg-bg: #2c2c2c;
+                --button-bg: #383838;
+                --button-hover-bg: #505050;
+                --code-bg: #1e1e1e;
+                --error-color: #ff4d4d;
+                --error-bg: #440000;
+                --action-icon-color: #999999;
+                --action-icon-hover-color: #ffffff;
+                --edit-indicator-color: #8cb4ff;
+                --safe-area-inset-top: env(safe-area-inset-top, 0px);
+                --safe-area-inset-right: env(safe-area-inset-right, 0px);
+                --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+                --safe-area-inset-left: env(safe-area-inset-left, 0px);
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html {
+                height: 100%;
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                    Roboto, Helvetica, Arial, sans-serif;
+                line-height: 1.6;
+                background-color: var(--bg-color);
+                color: var(--text-color);
+                display: flex;
+                flex-direction: column;
+                height: 100dvh;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+            #chat-container {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                max-width: 800px;
+                width: 100%;
+                margin: 0 auto;
+                overflow: hidden;
+                padding-left: max(1em, var(--safe-area-inset-left));
+                padding-right: max(1em, var(--safe-area-inset-right));
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+            h1 {
+                color: var(--text-color);
+                text-align: center;
+                margin-top: max(0.8em, var(--safe-area-inset-top));
+                margin-bottom: 0.8em;
+                margin-left: 0;
+                margin-right: 0;
+                font-size: 1.5em;
+                flex-shrink: 0;
+                min-height: 1.2em;
+            }
+            #chat-history {
+                flex-grow: 1;
+                overflow-y: auto;
+                padding: 1em;
+                margin-bottom: 1em;
+                display: flex;
+                flex-direction: column;
+                gap: 0.8em;
+                border-radius: 18px;
+                scrollbar-width: thin;
+                scrollbar-color: var(--button-bg) var(--bg-color);
+                min-height: 0;
+            }
+            #chat-history::-webkit-scrollbar {
+                width: 8px;
+            }
+            #chat-history::-webkit-scrollbar-track {
+                background: var(--bg-color);
+                border-radius: 4px;
+            }
+            #chat-history::-webkit-scrollbar-thumb {
+                background-color: var(--button-bg);
+                border-radius: 4px;
+                border: 2px solid var(--bg-color);
+            }
+            #chat-history:empty::before {
+                content: "საუბრის დასაწყებად დაწერე რამე.";
+                color: var(--text-secondary-color);
+                font-style: italic;
+                text-align: center;
+                align-self: center;
+                margin: auto;
+                display: block;
+            }
+            .message-wrapper {
+                display: flex;
+                flex-direction: column;
+            }
+            .message-wrapper.user-message-wrapper {
+                align-items: flex-end;
+            }
+            .message-wrapper.ai-message-wrapper {
+                align-items: flex-start;
+            }
+            .message {
+                padding: 0.7em 1.2em;
+                border-radius: 18px;
+                max-width: 85%;
+                word-wrap: break-word;
+                white-space: pre-wrap;
+                line-height: 1.4;
+                opacity: 0;
+                animation: fadeIn 0.3s ease-out forwards;
+                position: relative;
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(5px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            .user-message {
+                background-color: var(--user-msg-bg);
+                color: var(--text-color);
+                border-bottom-right-radius: 6px;
+            }
+            .ai-message {
+                background-color: var(--ai-msg-bg);
+                color: var(--text-color);
+                border-bottom-left-radius: 6px;
+            }
+            .error-message {
+                background-color: var(--error-bg);
+                color: var(--error-color);
+                border: 1px solid var(--error-color);
+                border-radius: 8px;
+                align-self: stretch;
+                text-align: center;
+                font-weight: bold;
+                max-width: 100%;
+            }
+            .message-actions {
+                display: flex;
+                gap: 0.5em;
+                padding: 0.3em 0.8em 0 0;
+                opacity: 0;
+                transition: opacity 0.2s ease-in-out;
+                margin-top: -2px;
+                align-self: flex-end;
+            }
+            .message-wrapper:hover .message-actions,
+            .message-wrapper:focus-within .message-actions {
+                opacity: 1;
+            }
+            .action-icon {
+                background: none;
+                border: none;
+                padding: 0;
+                cursor: pointer;
+                color: var(--action-icon-color);
+                width: 18px;
+                height: 18px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .action-icon:hover {
+                color: var(--action-icon-hover-color);
+            }
+            .action-icon svg {
+                width: 100%;
+                height: 100%;
+            }
+            .message strong {
+                font-weight: bold;
+            }
+            .message em {
+                font-style: italic;
+            }
+            .message a {
+                color: var(--link-color);
+                text-decoration: underline;
+                word-break: break-all;
+            }
+            .message a:hover {
+                color: color-mix(in srgb, var(--link-color) 80%, white);
+            }
+            .message code:not(pre code) {
+                background-color: var(--code-bg);
+                padding: 0.1em 0.3em;
+                border-radius: 4px;
+                font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono",
+                    monospace;
+                font-size: 0.9em;
+                border: 1px solid var(--border-color);
+                word-wrap: break-word;
+            }
+            .message pre {
+                background-color: var(--code-bg);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 0.8em 1em;
+                overflow-x: auto;
+                white-space: pre;
+                font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono",
+                    monospace;
+                font-size: 0.9em;
+                margin: 0.5em 0;
+                scrollbar-width: thin;
+                scrollbar-color: var(--button-bg) var(--code-bg);
+            }
+            .message pre::-webkit-scrollbar {
+                height: 8px;
+            }
+            .message pre::-webkit-scrollbar-track {
+                background: var(--code-bg);
+                border-radius: 4px;
+            }
+            .message pre::-webkit-scrollbar-thumb {
+                background-color: var(--button-bg);
+                border-radius: 4px;
+                border: 2px solid var(--code-bg);
+            }
+            .message pre code {
+                background-color: transparent;
+                padding: 0;
+                border-radius: 0;
+                border: none;
+                font-size: inherit;
+                white-space: inherit;
+                word-wrap: normal;
+            }
+            .loading-message {
+                background-color: transparent;
+                color: var(--text-secondary-color);
+                align-self: flex-start;
+                margin-right: auto;
+                font-style: italic;
+                padding: 0.7em 1.2em;
+                opacity: 0.8;
+                animation: none;
+            }
+            .loading-message::after {
+                content: ".";
+                animation: loadingDots 1.4s infinite;
+                display: inline-block;
+            }
+            @keyframes loadingDots {
+                0%,
+                20% {
+                    content: ".";
+                }
+                40% {
+                    content: "..";
+                }
+                60% {
+                    content: "...";
+                }
+                80%,
+                100% {
+                    content: ".";
+                }
+            }
+            #chat-form {
+                display: flex;
+                align-items: center;
+                gap: 0.75em;
+                background-color: var(--bg-color);
+                border-top: 1px solid var(--border-color);
+                flex-shrink: 0;
+                width: 100%;
+                padding-top: 1em;
+                padding-bottom: max(1em, var(--safe-area-inset-bottom));
+                padding-left: max(1em, var(--safe-area-inset-left));
+                padding-right: max(1em, var(--safe-area-inset-right));
+                box-sizing: border-box;
+            }
+            textarea {
+                flex-grow: 1;
+                padding: 0.8em 1em;
+                border: 1px solid var(--border-color);
+                border-radius: 20px;
+                font-size: 1em;
+                resize: none;
+                background-color: var(--input-bg);
+                color: var(--text-color);
+                min-height: 44px;
+                max-height: 150px;
+                font-family: inherit;
+                line-height: 1.4;
+                overflow: hidden;
+                transition: border-color 0.2s ease;
+            }
+            textarea::placeholder {
+                color: var(--text-secondary-color);
+            }
+            textarea.editing {
+                border-color: var(--edit-indicator-color);
+            }
+            button#submit-button {
+                flex-shrink: 0;
+                background-color: var(--button-bg);
+                color: var(--text-color);
+                border: none;
+                border-radius: 50%;
+                width: 44px;
+                height: 44px;
+                padding: 0;
+                cursor: pointer;
+                font-size: 1.5em;
+                transition: background-color 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            button#submit-button svg {
+                width: 24px;
+                height: 24px;
+                fill: currentColor;
+                transition: transform 0.2s ease;
+            }
+            button#submit-button.editing svg {
+                transform: rotate(90deg);
+            }
+            button#submit-button:disabled {
+                background-color: var(--input-bg);
+                color: var(--text-secondary-color);
+                cursor: not-allowed;
+                opacity: 0.7;
+            }
+            button#submit-button:hover:not(:disabled) {
+                background-color: var(--button-hover-bg);
+            }
+            #cancel-edit-button {
+                display: none;
+                background: none;
+                border: none;
+                color: var(--action-icon-color);
+                padding: 0 0.5em 0 0;
+                cursor: pointer;
+                font-size: 1.5em;
+            }
+            #cancel-edit-button:hover {
+                color: var(--action-icon-hover-color);
+            }
+            #chat-form.editing #cancel-edit-button {
+                display: block;
+            }
+            #error-display {
+                color: var(--error-color);
+                background-color: var(--error-bg);
+                border: 1px solid var(--error-color);
+                padding: 0.8em;
+                margin: 0.5em auto;
+                border-radius: 8px;
+                max-width: 800px;
+                text-align: center;
+                flex-shrink: 0;
+            }
+            .hidden {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="chat-container">
+            <h1></h1>
+            <div id="chat-history"></div>
+            <div id="error-display" class="hidden"></div>
+        </div>
+        <form id="chat-form">
+            <button
+                type="button"
+                id="cancel-edit-button"
+                aria-label="რედაქტირების გაუქმება"
+            >
+                ×
+            </button>
+            <textarea
+                id="prompt"
+                name="prompt"
+                rows="1"
+                placeholder="დაწერე რამე..."
+                required
+            ></textarea>
+            <button
+                type="submit"
+                id="submit-button"
+                aria-label="შეტყობინების გაგზავნა"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                >
+                    <path
+                        fill-rule="evenodd"
+                        d="M11.47 2.47a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 1 1-1.06 1.06l-6.22-6.22V21a.75.75 0 0 1-1.5 0V4.81l-6.22 6.22a.75.75 0 1 1-1.06-1.06l7.5-7.5Z"
+                        clip-rule="evenodd"
+                    />
+                </svg>
+            </button>
+        </form>
+
+        <script>
+            const form = document.getElementById("chat-form");
+            const promptInput = document.getElementById("prompt");
+            const chatHistory = document.getElementById("chat-history");
+            const submitButton = document.getElementById("submit-button");
+            const cancelEditButton =
+                document.getElementById("cancel-edit-button");
+            const errorDisplay = document.getElementById("error-display");
+            const headerElement = document.querySelector("h1");
+
+            let editingMessageId = null;
+            let isFirstMessageSent = false;
+
+            const georgianGreetings = [
+                "გამარჯობა ნანა!",
+                "ჰეი ნანა",
+                "რამე ახალია ნანა?",
+                "რით დაგეხმარო ნანა?",
+                "რამე გინდა ნანა?",
+                "ვივიანი მომიკიტხე",
+                "საბა როგორაა?",
+            ];
+
+            function generateMessageId() {
+                return `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+            }
+            function formatMessage(text) {
+                let html = text
+                    .replace(/&/g, "&")
+                    .replace(/</g, "<")
+                    .replace(/>/g, ">");
+                html = html.replace(
+                    /```(\w*?)\n([\s\S]*?)\n```/g,
+                    (match, lang, code) => {
+                        const rawCode = code
+                            .replace(/</g, "<")
+                            .replace(/>/g, ">")
+                            .replace(/&/g, "&");
+                        const escapedCodeForDisplay = rawCode
+                            .replace(/&/g, "&")
+                            .replace(/</g, "<")
+                            .replace(/>/g, ">");
+                        const languageClass = lang
+                            ? `language-${lang}`
+                            : "language-plaintext";
+                        return `<pre><code class="${languageClass}">${escapedCodeForDisplay.trim()}</code></pre>`;
+                    },
+                );
+                html = html.replace(/```\n([\s\S]*?)\n```/g, (match, code) => {
+                    const rawCode = code
+                        .replace(/</g, "<")
+                        .replace(/>/g, ">")
+                        .replace(/&/g, "&");
+                    const escapedCodeForDisplay = rawCode
+                        .replace(/&/g, "&")
+                        .replace(/</g, "<")
+                        .replace(/>/g, ">");
+                    return `<pre><code class="language-plaintext">${escapedCodeForDisplay.trim()}</code></pre>`;
+                });
+                const codeBlocks = [];
+                html = html.replace(/<pre>[\s\S]*?<\/pre>/g, (match) => {
+                    codeBlocks.push(match);
+                    return `%%CODEBLOCK${codeBlocks.length - 1}%%`;
+                });
+                html = html.replace(/`([^`]+?)`/g, (match, code) => {
+                    const rawCode = code
+                        .replace(/</g, "<")
+                        .replace(/>/g, ">")
+                        .replace(/&/g, "&");
+                    const escapedCodeForDisplay = rawCode
+                        .replace(/&/g, "&")
+                        .replace(/</g, "<")
+                        .replace(/>/g, ">");
+                    return `<code>${escapedCodeForDisplay}</code>`;
+                });
+                html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+                html = html.replace(/__(.+?)__/g, "<strong>$1</strong>");
+                html = html.replace(
+                    /(?<!\*)\*(?!\s)(.+?)(?<!\s)\*(?!\*)/g,
+                    "<em>$1</em>",
+                );
+                html = html.replace(
+                    /(?<![a-zA-Z0-9])_([^_]+)_(?![a-zA-Z0-9])/g,
+                    "<em>$1</em>",
+                );
+                html = html.replace(
+                    /(?<!href=["'])(https?:\/\/[^\s<]+[^\s<.)])/g,
+                    '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>',
+                );
+                html = html.replace(/%%CODEBLOCK(\d+)%%/g, (match, index) => {
+                    return codeBlocks[parseInt(index, 10)];
+                });
+                const parts = html.split(/(<pre>[\s\S]*?<\/pre>)/);
+                for (let i = 0; i < parts.length; i++) {
+                    if (i % 2 === 0) {
+                        parts[i] = parts[i].replace(/\n/g, "<br>");
+                    }
+                }
+                html = parts.join("");
+                return html;
+            }
+            function addMessage(
+                rawText,
+                type = "ai",
+                messageId = null,
+                insertBeforeElement = null,
+            ) {
+                const id = messageId || generateMessageId();
+                const wrapper = document.createElement("div");
+                wrapper.classList.add(
+                    "message-wrapper",
+                    `${type}-message-wrapper`,
+                );
+                wrapper.dataset.messageId = id;
+                const messageDiv = document.createElement("div");
+                messageDiv.classList.add("message", `${type}-message`);
+                if (type === "user" || type === "ai" || type === "error") {
+                    const formattedHtml = formatMessage(rawText);
+                    messageDiv.innerHTML = formattedHtml;
+                    if (type === "user") {
+                        messageDiv.dataset.rawText = rawText;
+                    }
+                } else if (type === "loading") {
+                    messageDiv.textContent = "";
+                } else {
+                    messageDiv.textContent = rawText;
+                }
+                wrapper.appendChild(messageDiv);
+                if (type === "user") {
+                    const actionsContainer = document.createElement("div");
+                    actionsContainer.classList.add("message-actions");
+                    const editButton = document.createElement("button");
+                    editButton.type = "button";
+                    editButton.classList.add("action-icon", "edit-button");
+                    editButton.setAttribute(
+                        "aria-label",
+                        "შეტყობინების რედაქტირება",
+                    );
+                    editButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14.304 4.844 2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5m2.409-9.91a2.017 2.017 0 0 1 0 2.853l-6.844 6.844L8 14l.713-3.565 6.844-6.844a2.015 2.015 0 0 1 2.852 0Z"/> </svg>`;
+                    actionsContainer.appendChild(editButton);
+                    const deleteButton = document.createElement("button");
+                    deleteButton.type = "button";
+                    deleteButton.classList.add("action-icon", "delete-button");
+                    deleteButton.setAttribute(
+                        "aria-label",
+                        "შეტყობინების წაშლა",
+                    );
+                    deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z"/> </svg>`;
+                    actionsContainer.appendChild(deleteButton);
+                    wrapper.appendChild(actionsContainer);
+                }
+                if (insertBeforeElement) {
+                    chatHistory.insertBefore(wrapper, insertBeforeElement);
+                } else {
+                    chatHistory.appendChild(wrapper);
+                }
+                scrollToBottom();
+                return wrapper;
+            }
+            function scrollToBottom() {
+                setTimeout(() => {
+                    chatHistory.scrollTo({
+                        top: chatHistory.scrollHeight,
+                        behavior: "smooth",
+                    });
+                }, 100);
+            }
+            function adjustTextareaHeight() {
+                const maxHeight = 150;
+                promptInput.style.height = "auto";
+                const scrollHeight = promptInput.scrollHeight;
+                const minHeight = 44;
+                const newHeight = Math.max(minHeight, scrollHeight);
+                promptInput.style.height =
+                    Math.min(newHeight, maxHeight) + "px";
+            }
+            function enterEditMode(messageWrapper) {
+                const messageDiv =
+                    messageWrapper.querySelector(".user-message");
+                if (!messageDiv) return;
+                const messageId = messageWrapper.dataset.messageId;
+                const rawText =
+                    messageDiv.dataset.rawText || messageDiv.textContent;
+                editingMessageId = messageId;
+                promptInput.value = rawText;
+                promptInput.classList.add("editing");
+                submitButton.classList.add("editing");
+                submitButton.setAttribute(
+                    "aria-label",
+                    "შეტყობინების განახლება",
+                );
+                form.classList.add("editing");
+                chatHistory
+                    .querySelectorAll(".action-icon")
+                    .forEach((btn) => (btn.disabled = true));
+                messageWrapper
+                    .querySelectorAll(".action-icon")
+                    .forEach((btn) => (btn.disabled = false));
+                adjustTextareaHeight();
+                promptInput.focus();
+                promptInput.select();
+            }
+            function exitEditMode() {
+                editingMessageId = null;
+                promptInput.value = "";
+                promptInput.classList.remove("editing");
+                submitButton.classList.remove("editing");
+                submitButton.setAttribute(
+                    "aria-label",
+                    "შეტყობინების გაგზავნა",
+                );
+                form.classList.remove("editing");
+                chatHistory
+                    .querySelectorAll(".action-icon")
+                    .forEach((btn) => (btn.disabled = false));
+                adjustTextareaHeight();
+            }
+            promptInput.addEventListener("input", adjustTextareaHeight);
+            window.addEventListener("resize", adjustTextareaHeight);
+            adjustTextareaHeight();
+            promptInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    if (!submitButton.disabled) {
+                        form.requestSubmit(submitButton);
+                    }
+                }
+                if (event.key === "Escape" && editingMessageId) {
+                    exitEditMode();
+                }
+            });
+            cancelEditButton.addEventListener("click", exitEditMode);
+            chatHistory.addEventListener("click", (event) => {
+                const target = event.target;
+                const editButton = target.closest(".edit-button");
+                const deleteButton = target.closest(".delete-button");
+                const messageWrapper = target.closest(".message-wrapper");
+                if (!messageWrapper) return;
+                if (editButton) {
+                    enterEditMode(messageWrapper);
+                } else if (deleteButton) {
+                    handleDelete(messageWrapper);
+                }
+            });
+            function handleDelete(messageWrapperToDelete) {
+                if (!messageWrapperToDelete) return;
+                const messageIdToDelete =
+                    messageWrapperToDelete.dataset.messageId;
+                console.log("Deleting message:", messageIdToDelete);
+                let currentElement = messageWrapperToDelete;
+                const elementsToRemove = [messageWrapperToDelete];
+                let nextElement = currentElement.nextElementSibling;
+                while (
+                    nextElement &&
+                    nextElement.classList.contains("ai-message-wrapper")
+                ) {
+                    elementsToRemove.push(nextElement);
+                    nextElement = nextElement.nextElementSibling;
+                }
+                elementsToRemove.forEach((el) => el.remove());
+                console.log("Removed", elementsToRemove.length, "elements.");
+                if (editingMessageId === messageIdToDelete) {
+                    exitEditMode();
+                }
+                if (promptInput.disabled) {
+                    promptInput.disabled = false;
+                    submitButton.disabled = false;
+                }
+            }
+            async function createErrorFromResponse(response, contextId = null) {
+                let errorMsg = `HTTP error! Status: ${response.status} ${contextId ? `(Context: ${contextId})` : ""}`;
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.error || errorMsg;
+                } catch (e) {
+                    try {
+                        const textError = await response.text();
+                        if (textError)
+                            errorMsg += `\nResponse: ${textError.substring(0, 150)}`;
+                    } catch (textErr) {}
+                }
+                return new Error(errorMsg);
+            }
+
+            // --- Form Submission (Handles NEW/EDIT + Initial Prompt) ---
+            form.addEventListener("submit", async (event) => {
+                event.preventDefault();
+                const currentPrompt = promptInput.value.trim();
+                if (!currentPrompt) return;
+                const isEditing = !!editingMessageId;
+                const originalMessageWrapper = isEditing
+                    ? chatHistory.querySelector(
+                          `.message-wrapper[data-message-id="${editingMessageId}"]`,
+                      )
+                    : null;
+                let elementToInsertBefore = null;
+                if (isEditing && originalMessageWrapper) {
+                    let nextSibling = originalMessageWrapper.nextElementSibling;
+                    if (
+                        nextSibling &&
+                        nextSibling.classList.contains("ai-message-wrapper")
+                    ) {
+                        elementToInsertBefore = nextSibling.nextElementSibling;
+                    } else {
+                        elementToInsertBefore = nextSibling;
+                    }
+                }
+                submitButton.disabled = true;
+                promptInput.disabled = true;
+                promptInput.style.opacity = 0.7;
+                errorDisplay.classList.add("hidden");
+                const wasEditingId = editingMessageId;
+                if (isEditing) {
+                    exitEditMode();
+                }
+                let loadingMessage;
+                let promptToSend = currentPrompt;
+
+                // **** Prepend system prompt logic with DATE ****
+                if (!isEditing && !isFirstMessageSent) {
+                    // Get current date
+                    const today = new Date();
+                    // Format date as YYYY-MM-DD (reliable format)
+                    const formattedDate = today.toISOString().split("T")[0];
+
+                    // Construct the system instruction with the dynamic date
+                    const systemInstruction = `You are an AI speaking to a woman named ნანა. She is from Georgia and was born on January 20, 1980. Always speak to her in Georgian. Be kind, helpful, and respectful. Write short, simple messages that are easy to read on a phone. Use punctuation and clear phrasing to make your replies easy to understand. The current date is ${formattedDate}`; // <-- Date inserted here
+
+                    promptToSend = `${systemInstruction} User's message: ${currentPrompt}`; // Added "User's message:" for clarity
+                    console.log(
+                        "Prepending system prompt with date. Sending:",
+                        promptToSend,
+                    );
+                    isFirstMessageSent = true; // Mark as sent
+                } else {
+                    console.log("Sending prompt as is:", promptToSend);
+                }
+                // **** END SYSTEM PROMPT LOGIC ****
+
+                try {
+                    if (isEditing && originalMessageWrapper) {
+                        console.log(
+                            "Submitting EDIT for message:",
+                            wasEditingId,
+                        );
+                        let aiMessageToRemove =
+                            originalMessageWrapper.nextElementSibling;
+                        if (
+                            aiMessageToRemove &&
+                            aiMessageToRemove.classList.contains(
+                                "ai-message-wrapper",
+                            )
+                        ) {
+                            aiMessageToRemove.remove();
+                        }
+                        originalMessageWrapper.remove();
+                        const editedUserWrapper = addMessage(
+                            currentPrompt,
+                            "user",
+                            wasEditingId,
+                            elementToInsertBefore,
+                        );
+                        loadingMessage = addMessage(
+                            "",
+                            "loading",
+                            null,
+                            elementToInsertBefore,
+                        );
+                        const response = await fetch("/api/chat", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ prompt: promptToSend }),
+                        }); // Use promptToSend
+                        if (loadingMessage) loadingMessage.remove();
+                        if (!response.ok)
+                            throw await createErrorFromResponse(
+                                response,
+                                wasEditingId,
+                            );
+                        const data = await response.json();
+                        const responseText =
+                            data.response || "[No response text received]";
+                        addMessage(
+                            responseText,
+                            "ai",
+                            null,
+                            loadingMessage
+                                ? loadingMessage.nextElementSibling
+                                : elementToInsertBefore,
+                        );
+                    } else {
+                        console.log("Submitting NEW message");
+                        const newUserWrapper = addMessage(
+                            currentPrompt,
+                            "user",
+                        );
+                        loadingMessage = addMessage("", "loading");
+                        const response = await fetch("/api/chat", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ prompt: promptToSend }),
+                        }); // Use promptToSend
+                        if (loadingMessage) loadingMessage.remove();
+                        if (!response.ok)
+                            throw await createErrorFromResponse(response);
+                        const data = await response.json();
+                        const responseText =
+                            data.response || "[No response text received]";
+                        addMessage(responseText, "ai");
+                    }
+                    promptInput.value = "";
+                    adjustTextareaHeight();
+                } catch (error) {
+                    console.error(
+                        `Chat error (${isEditing ? "Edit" : "New"}):`,
+                        error,
+                    );
+                    if (loadingMessage && loadingMessage.parentNode) {
+                        loadingMessage.remove();
+                    }
+                    addMessage(
+                        `შეცდომა: ${error.message}` || "მოხდა უცნობი შეცდომა.",
+                        "error",
+                        null,
+                        elementToInsertBefore,
+                    ); // Georgian prefix
+                } finally {
+                    submitButton.disabled = false;
+                    promptInput.disabled = false;
+                    promptInput.style.opacity = 1;
+                    promptInput.focus();
+                    adjustTextareaHeight();
+                }
+            });
+
+            function setRandomHeader() {
+                if (headerElement && georgianGreetings.length > 0) {
+                    const randomIndex = Math.floor(
+                        Math.random() * georgianGreetings.length,
+                    );
+                    headerElement.textContent = georgianGreetings[randomIndex];
+                } else if (headerElement) {
+                    headerElement.textContent = "ჩატი";
+                }
+            }
+            setRandomHeader();
+        </script>
+    </body>
+</html>
