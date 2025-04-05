@@ -1,1 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Chat Wrapper</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Gemini Chat Wrapper (Render Demo)</h1>
+    <form id="chat-form">
+        <textarea id="prompt" name="prompt" rows="4" placeholder="Enter your prompt here..." required></textarea>
+        <button type="submit">Send</button>
+    </form>
+    <div id="response-area">
+        <h2>Response:</h2>
+        <pre id="response-text">...</pre>
+        <div id="loading" class="hidden">Loading...</div>
+        <div id="error" class="hidden error"></div>
+    </div>
 
+    <script src="script.js"></script>
+</body>
+</html>
